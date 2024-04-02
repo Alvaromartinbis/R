@@ -1,0 +1,131 @@
+---
+title: "Dataset para niveles de polen diario en el municipio de Madrid"
+author: "Alvaro Martín"
+date: "Actualizar ejecutando"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## **Niveles de Pólen**
+
+El presente documento creado bajo R Markdown tiene la pretensión de mostrar los niveles de polen por tipo polínico, preferentemente Gramíneas y Ciprés y Arizónicas, dos de los pólenes que a más población afecta.
+A través de una representación gráfica podremos visualizar los niveles de concentración informando del riesgo.
+La información ha sido extraída de la API pública de la Comunidad de Madrid.
+
+
+Extracción de la información, mediante la siguiente url: <https://datos.comunidad.madrid/catalogo/dataset/7bc9d9fd-16ec-4ce9-aa21-91ca0254d06e/resource/1eeed6ac-32cc-4cf1-b976-52bea51ab964/download/mediciones_polen.csv>.
+
+Los pasos de creación de mi Script en R, para la carga de los datos diarios son los siguientes:
+
+1. Carga de Librerías:
+- dplyr
+- tidyr
+- ggplot2
+
+```{r Librerias, include=FALSE}
+library(dplyr)    
+library(tidyr)    
+library(readxl) 
+library(ggplot2)
+
+
+```
+
+2. Extracción de la url de la API de la Comunidad de Madrid 
+
+```{r Extracción URL, echo=TRUE}
+url <- "https://datos.comunidad.madrid/catalogo/dataset/7bc9d9fd-16ec-4ce9-aa21-91ca0254d06e/resource/1eeed6ac-32cc-4cf1-b976-52bea51ab964/download/mediciones_polen.csv"
+
+medicion_polen <- read.csv(url, header = TRUE, sep = ";",encoding = "latin1")
+
+```
+
+3. Resumen datos de medición de polen
+
+```{r Métricas Data set, echo=TRUE}
+
+# Mostrar los primeros registros del dataset
+head(medicion_polen)
+summary(medicion_polen)
+glimpse(medicion_polen)
+```
+4. Filtro para Gramíneas del Municipio de Madrid
+```{r Medición Gramíneas, echo=TRUE}
+# Filtrar los datos
+medicion_graminea <- subset(medicion_polen, captador == "AYTM" & tipo_polinico == "Gramíneas")
+
+head(medicion_graminea)
+summary(medicion_graminea)
+
+```
+5. Filtro para Ciprés y Arizónicas del Municipio de Madrid
+```{r Medición Cipres y Arizonicas, echo=TRUE}
+# Filtrar los datos
+medicion_cipres <- subset(medicion_polen, captador == "AYTM" & tipo_polinico == "Cupresáceas/Taxáceas")
+
+head(medicion_cipres)
+summary(medicion_cipres)
+
+```
+
+
+
+## **Grafico de puntos Niveles de Riesgo de Polen Gramínea**
+
+
+```{r Grafico Graminea, echo=FALSE}
+medicion_graminea$Riesgo_Alergia <- cut(medicion_graminea$granos_de_polen_x_metro_cubico, 
+                                       breaks = c(0, 1, 4, Inf),
+                                       labels = c("Bajo", "Medio" , "Alto"),
+                                       include.lowest = TRUE)
+
+# Definir los colores para cada nivel
+colores <- c("Bajo" = "green", "Medio" = "orange", "Alto" = "red")
+
+# Graficar utilizando ggplot2 y asignar colores
+ggplot(medicion_graminea, aes(x = fecha_lectura, y = granos_de_polen_x_metro_cubico, color = Riesgo_Alergia)) +
+  geom_point() +  # Usar puntos para representar los datos
+  labs(title = "Riesgo Alergia Diario a Gramínea en Madrid ",
+       x = "Fecha de lectura",
+       y = "Granos de polen por metro cúbico") +
+  scale_color_manual(values = colores) +  # Asignar colores manualmente
+  theme_minimal()  # Utilizar un tema minimalista
+```
+
+
+
+## **Grafico Riesgo Niveles de Polen Ciprés y Arizónicas**
+
+
+```{r Grafico Cipres y Arizonicas, echo=FALSE}
+medicion_cipres$Riesgo_Alergia <- cut(medicion_cipres$granos_de_polen_x_metro_cubico, 
+                                       breaks = c(-Inf, 110, 201, 479, Inf),
+                                       labels = c("Bajo", "Medio" , "Alto", "Muy Alto"),
+                                       include.lowest = TRUE)
+
+# Definir los colores para cada nivel
+colores <- c("Bajo" = "purple", "Medio" = "green", "Alto" = "orange", "Muy Alto" = "red")
+
+# Graficar utilizando ggplot2 y asignar colores
+ggplot(medicion_cipres, aes(x = fecha_lectura, y = granos_de_polen_x_metro_cubico, color = Riesgo_Alergia)) +
+  geom_point() +  # Usar puntos para representar los datos
+  labs(title = "Riesgo Alergia Diario a Ciprés y Arizonicas en Madrid ",
+       x = "Fecha de lectura",
+       y = "Granos de polen por metro cúbico") +
+  scale_color_manual(values = colores) +  # Asignar colores manualmente
+  theme_minimal()  # Utilizar un tema minimalista
+
+```
+
+### Para la elaboración del documento he contado con la consulta de múltiples fuentes:
+- Web de R project
+- Web Comunidad de Madrid: Red Palin
+- Stack Overflow
+- Chat GPT... innumerables promts
+
+
+##### La intencionalidad del trabajo ha sido la de extraer de una Api pública como es la de la Comunidad de Madrid de los datos necesario para informar a los Alérgicos a Gramínea, Ciprés y Arizónica de los niveles de riesgo para sus alergias con un carácter diario.
+.
